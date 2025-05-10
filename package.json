@@ -1,0 +1,18 @@
+{
+  "name": "banco-parte2",
+  "version": "1.0.0",
+  "description": "Trabalho de banco de dados parte 2, leitura e implementacao de banco com parte em csv",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "csv-parser": "^3.2.0",
+    "mysql2": "^3.14.0",
+    "sequelize": "^6.37.6",
+    "strip-bom-stream": "^5.0.0"
+  }
+}

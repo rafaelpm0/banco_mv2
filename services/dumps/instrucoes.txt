@@ -1,0 +1,27 @@
+-- no cmd verifique se o comando mysql funciona, precisa estar como variável de ambiente. Se nao estiver coloque
+o mysql server/bin como variável de ambiente e reinicie o pc, ai teste no terminal
+
+-- Exemplo de uso:
+-- 1. Abra o terminal ou prompt de comando.
+-- 2. Navegue até o diretório onde este arquivo está localizado.
+--    Comando: cd C:/Users/User/Downloads/banco_mv2/services/dumps
+-- 3. Faça login no MySQL.
+--    Comando: mysql -u root -p 
+-- 4. Execute este arquivo.
+--    Comando: source employees.sql;
+
+-- Certifique-se de que os seguintes arquivos estão disponíveis e acessíveis:
+-- - load_departments.dump
+-- - load_employees.dump
+-- - load_salaries.dump
+-- - load_titles.dump
+-- - load_dept_emp.dump
+-- - load_dept_manager.dump
+
+-- Se algum arquivo não for encontrado, o MySQL retornará um erro como:
+-- "Failed to open file 'nome_do_arquivo.dump', error: 2".
+-- Isso significa que o arquivo não está no diretório correto ou o caminho está errado.
+
+-- Para corrigir, mova os arquivos para o mesmo diretório ou ajuste os caminhos no script.
+
+-- Fim do arquivo de comentários.
