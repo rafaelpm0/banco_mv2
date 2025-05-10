@@ -1,12 +1,10 @@
 
 import { connectToDatabase, closeDatabaseConnection } from '../DBs/mySql/mqSql.js';
 
-
-
-export async function fetchAllEmployees(){
+export async function fetchTitle(emp_no){
   try{
     const sequelize = connectToDatabase();
-    const [results] = await sequelize.query('SELECT * FROM employees');
+    const [results] = await sequelize.query('SELECT * FROM titles WHERE emp_no = :emp_no', { replacements: { emp_no },});
     closeDatabaseConnection(sequelize);
     return results;
 
@@ -16,4 +14,4 @@ export async function fetchAllEmployees(){
   }
 }
 
-fetchAllEmployees()
+fetchTitle("10001")
