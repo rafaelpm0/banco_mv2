@@ -1,0 +1,4 @@
+Criar usuário dentro do mongodb se preciso
+
+usuário: rafaelpmedeiros00
+senha: FSW5Q1oT0nSANaGf
