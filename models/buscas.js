@@ -12,20 +12,21 @@ async function findEmployeesByManagerDepartment(managerInput) {
     if (!isNaN(managerInput)) {
       managerEmpNo = Number(managerInput);
     } else {
-      // Busca o emp_no do gerente pelo nome
+      // Busca o emp_no do gerente pelo nome completo no campo manager_info
       const gerenteDoc = await collection.findOne({
-        departments: { $elemMatch: { manager_name: managerInput } }
+        "manager_info": { $exists: true },
+        $expr: {
+          $eq: [
+            { $concat: ["$first_name", " ", "$last_name"] },
+            managerInput
+          ]
+        }
       });
       if (!gerenteDoc) {
         console.log(`Gerente "${managerInput}" não encontrado.`);
         return;
       }
-      const dept = gerenteDoc.departments.find(d => d.manager_name === managerInput);
-      managerEmpNo = dept?.manager_emp_no;
-      if (!managerEmpNo) {
-        console.log(`Gerente "${managerInput}" não encontrado.`);
-        return;
-      }
+      managerEmpNo = gerenteDoc.emp_no;
     }
 
     // 1. Buscar todos os períodos em que esse gerente foi responsável por algum departamento
@@ -33,7 +34,7 @@ async function findEmployeesByManagerDepartment(managerInput) {
       { $match: { "manager_info.manager_emp_no": managerEmpNo } },
       {
         $group: {
-          _id: "$manager_info.manager_dept_no",
+          _id: "$manager_info.manager_dept_name", // Usando nome do departamento
           from_date: { $first: "$manager_info.from_date" },
           to_date: { $first: "$manager_info.to_date" }
         }
@@ -47,51 +48,40 @@ async function findEmployeesByManagerDepartment(managerInput) {
 
     // 2. Para cada período, buscar funcionários cujos períodos se sobrepõem
     for (const period of managerPeriods) {
-      const dept_no = period._id;
+      const dept_name = period._id;
       const mgr_from = new Date(period.from_date);
       const mgr_to = new Date(period.to_date);
 
       const employees = await collection.find({
         departments: {
           $elemMatch: {
-            dept_no: dept_no,
+            dept_name: dept_name,
             from_date: { $lte: mgr_to },
             to_date: { $gte: mgr_from }
           }
         }
       }).toArray();
 
-      console.log(`\nFuncionários do departamento ${dept_no} sob gerência de ${managerInput} (${mgr_from.toISOString().slice(0,10)} até ${mgr_to.toISOString().slice(0,10)}):`);
+      console.log(`\nFuncionários do departamento "${dept_name}" sob gerência de ${managerInput} (${mgr_from.toISOString().slice(0,10)} até ${mgr_to.toISOString().slice(0,10)}):`);
+      let count = 0;
       employees.forEach(emp => {
         const dept = emp.departments.find(d =>
-          d.dept_no === dept_no &&
-          new Date(d.from_date) <= mgr_to && // entrou antes ou enquanto o gerente estava
-          new Date(d.to_date) >= mgr_from && // saiu depois ou enquanto o gerente estava
-          new Date(d.from_date) <= new Date(d.to_date) && // sanity check
-          new Date(d.from_date) <= mgr_to && // entrou antes do gerente sair
-          new Date(d.from_date) <= mgr_to && // entrou antes do gerente sair
-          new Date(d.to_date) >= mgr_from // saiu depois do gerente entrar
+          d.dept_name === dept_name &&
+          new Date(d.from_date) <= mgr_to &&
+          new Date(d.to_date) >= mgr_from
         );
-        // Só mostra se o funcionário realmente esteve no dept enquanto o gerente era chefe
-        if (
-          dept &&
-          new Date(dept.from_date) <= mgr_to &&
-          new Date(dept.to_date) >= mgr_from &&
-          new Date(dept.from_date) <= new Date(dept.to_date)
-        ) {
-          // Aqui, para garantir que o funcionário não entrou depois do gerente sair:
-          if (new Date(dept.from_date) <= mgr_to && new Date(dept.from_date) <= mgr_to) {
-            console.log({
-              emp_no: emp.emp_no,
-              nome: `${emp.first_name} ${emp.last_name}`,
-              dept_name: dept.dept_name,
-              dept_from: dept.from_date,
-              dept_to: dept.to_date
-            });
-          }
+        if (dept) {
+          count++;
+          console.log({
+            emp_no: emp.emp_no,
+            nome: `${emp.first_name} ${emp.last_name}`,
+            dept_name: dept.dept_name,
+            dept_from: dept.from_date,
+            dept_to: dept.to_date
+          });
         }
       });
-      console.log(`Total: ${employees.length} funcionário(s) nesse período.`);
+      console.log(`Total: ${count} funcionário(s) nesse período.`);
     }
   } catch (error) {
     console.error('Erro ao buscar funcionários:', error);
@@ -100,8 +90,53 @@ async function findEmployeesByManagerDepartment(managerInput) {
   }
 }
 
+async function findEmployeesByTitle(titleInput) {
+  let client;
+  try {
+    const { db, client: mongoClient } = await conectarMongoDB();
+    client = mongoClient;
+    const collection = db.collection('employees');
+
+    const employees = await collection.find({
+      "titles.title": titleInput
+    }).toArray();
+
+    if (employees.length === 0) {
+      console.log(`Nenhum funcionário encontrado com o título "${titleInput}".`);
+      return;
+    }
+
+    console.log(`Funcionários com o título "${titleInput}":`);
+    let totalVinculos = 0;
+    employees.forEach(emp => {
+      const titles = emp.titles.filter(t => t.title === titleInput);
+      totalVinculos += titles.length;
+      titles.forEach(t => {
+        console.log({
+          emp_no: emp.emp_no,
+          nome: `${emp.first_name} ${emp.last_name}`,
+          title: t.title,
+          from_date: t.from_date,
+          to_date: t.to_date
+        });
+      });
+    });
+    console.log(`Total de vínculos com o título: ${totalVinculos}`);
+    console.log(`Total de funcionários únicos: ${employees.length}`);
+  } catch (error) {
+    console.error('Erro ao buscar funcionários por título:', error);
+  } finally {
+    if (client) await closeMongoDb(client);
+  }
+}
+
+//2a:
 // Teste com nome:
-//findEmployeesByManagerDepartment("Leon DasSarma");
+//findEmployeesByManagerDepartment("DeForest Hagimont");
 
 // Teste com ID:
-findEmployeesByManagerDepartment(110511);
+//findEmployeesByManagerDepartment(110386);
+
+//2b:
+// Exemplo de uso:
+findEmployeesByTitle('Senior Engineer');

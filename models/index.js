@@ -1,8 +1,6 @@
 import { connectToDatabase, closeDatabaseConnection } from '../DBs/mySql/mqSql.js';
 import { conectarMongoDB, closeMongoDb } from '../DBs/mongoDB/mongoDB.js';
 
-
-
 // Função para buscar um lote de funcionários usando LIMIT e OFFSET
 async function fetchBatch(limit, offset) {
   try {
@@ -129,28 +127,30 @@ export async function importMongo(batchSize = 100, mongoLimit = 10, totalLimit =
               d.dept_name === row.dept_name &&
               d.from_date.toISOString() === new Date(row.dept_emp_from_date).toISOString() &&
               d.to_date.toISOString() === new Date(row.dept_emp_to_date).toISOString() &&
-              d.manager_emp_no === (row.dept_manager_emp_no || null)
+              d.manager_emp_no === (row.manager_emp_no || null)
           );
           if (!deptExists) {
             grouped[emp_no].departments.push({
               dept_name: row.dept_name,
+              dept_no: row.emp_dept_no, // <-- Adicionado aqui
               from_date: new Date(row.dept_emp_from_date),
               to_date: new Date(row.dept_emp_to_date),
-              manager_name: row.dept_manager_first_name && row.dept_manager_last_name
-                ? `${row.dept_manager_first_name} ${row.dept_manager_last_name}`
+              manager_name: row.manager_first_name && row.manager_last_name
+                ? `${row.manager_first_name} ${row.manager_last_name}`
                 : null,
-              manager_emp_no: row.dept_manager_emp_no || null
+              manager_emp_no: row.manager_emp_no || null
             });
           }
         }
 
         // Gerente
         if (
-          row.manager_emp_no && 
-          row.manager_dept_no && 
-          row.manager_from_date && 
-          row.manager_to_date && 
-          row.manager_dept_name
+          row.manager_emp_no &&
+          row.manager_dept_no &&
+          row.manager_from_date &&
+          row.manager_to_date &&
+          row.manager_dept_name &&
+          String(emp_no) === String(row.manager_emp_no) // Comparação segura
         ) {
           grouped[emp_no].manager_info = {
             manager_emp_no: row.manager_emp_no,
@@ -197,5 +197,5 @@ export async function importMongo(batchSize = 100, mongoLimit = 10, totalLimit =
 }
 
 // Para testar, aumente os valores:
-importMongo(50000, 50000, 110000).catch(err => console.error('Erro na execução da importação:', err));
+importMongo(50000, 10000).catch(err => console.error('Erro na execução da importação:', err));
 // batchSize = 1000, mongoLimit = 100, totalLimit = 10 (apenas 10 documentos no total)
