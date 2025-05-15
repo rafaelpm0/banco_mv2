@@ -2,51 +2,7 @@ import { connectToDatabase, closeDatabaseConnection } from '../DBs/mySql/mqSql.j
 import { conectarMongoDB, closeMongoDb } from '../DBs/mongoDB/mongoDB.js';
 
 
-// Função para buscar todos os funcionários (desativada por enquanto)
-/*
-export async function fetchAll() {
-  try {
-    const sequelize = connectToDatabase();
-    const [results] = await sequelize.query(`
-      SELECT 
-        e.emp_no,
-        e.first_name,
-        e.last_name,
-        e.birth_date,
-        e.gender,
-        e.hire_date,
-        s.salary,
-        s.from_date AS salary_from_date,
-        s.to_date AS salary_to_date,
-        t.title,
-        t.from_date AS title_from_date,
-        t.to_date AS title_to_date,
-        d.dept_name,
-        dm.emp_no AS manager_emp_no,
-        dm.dept_no AS manager_dept_no,
-        de.from_date AS dept_emp_from_date,
-        de.to_date AS dept_emp_to_date,
-        de.dept_no AS emp_dept_no
-      FROM 
-        employees e
-      LEFT JOIN 
-        salaries s ON e.emp_no = s.emp_no
-      LEFT JOIN 
-        titles t ON e.emp_no = t.emp_no
-      LEFT JOIN 
-        dept_emp de ON e.emp_no = de.emp_no
-      LEFT JOIN 
-        departments d ON de.dept_no = d.dept_no
-      LEFT JOIN 
-        dept_manager dm ON d.dept_no = dm.dept_no AND e.emp_no = dm.emp_no;
-    `);
-    closeDatabaseConnection(sequelize);
-    return results;
-  } catch (error) {
-    throw new Error(`Erro ao buscar todos os funcionários: ${error.message}`);
-  }
-}
-*/
+
 // Função para buscar um lote de funcionários usando LIMIT e OFFSET
 async function fetchBatch(limit, offset) {
   try {
