@@ -5,7 +5,7 @@ import { Sequelize } from 'sequelize';
  * @returns {Sequelize} - Instância do Sequelize conectada ao banco de dados.
  */
 export function connectToDatabase() {
-  const sequelize = new Sequelize('employees', 'root', '1234', {
+  const sequelize = new Sequelize('employees', 'root', 'root', {
     host: 'localhost',
     dialect: 'mysql',
     logging: false,
@@ -24,7 +24,6 @@ export function connectToDatabase() {
 export async function closeDatabaseConnection(sequelize) {
   try {
     await sequelize.close();
-    console.log('Conexão com o banco de dados encerrada com sucesso.');
   } catch (error) {
     console.error('Erro ao encerrar a conexão com o banco de dados:', error.message);
   }
@@ -53,4 +52,4 @@ async function testDatabaseConnection() {
 }
 
 // Executa o teste local
-//testDatabaseConnection();
+testDatabaseConnection();
