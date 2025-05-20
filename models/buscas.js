@@ -130,13 +130,109 @@ async function findEmployeesByTitle(titleInput) {
   }
 }
 
+
+async function findEmployeesByDepartment(departmentInput) {
+  let client;
+  try {
+    const { db, client: mongoClient } = await conectarMongoDB();
+    client = mongoClient;
+    const collection = db.collection('employees');
+
+    const employees = await collection.find({
+      "departments.dept_name": departmentInput
+    }).toArray();
+
+    if (employees.length === 0) {
+      console.log(`Nenhum funcionário encontrado no departamento "${departmentInput}".`);
+      return;
+    }
+
+    console.log(`Funcionários no departamento "${departmentInput}":`);
+    let totalVinculos = 0;
+    employees.forEach(emp => {
+      const vinculos = emp.departments.filter(d => d.dept_name === departmentInput);
+      totalVinculos += vinculos.length;
+      vinculos.forEach(v => {
+        console.log({
+          emp_no: emp.emp_no,
+          nome: `${emp.first_name} ${emp.last_name}`,
+          department: v.dept_name,
+          from_date: v.from_date,
+          to_date:v.to_date
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Erro ao buscar funcionários por departamento:', error);
+  } finally {
+    if (client) await closeMongoDb(client);
+  }
+}
+
+async function listAvgSalaryByDepartment() {
+  let client;
+  try {
+    const { db, client: mongoClient } = await conectarMongoDB();
+    client = mongoClient;
+    const collection = db.collection('employees');
+
+    const avgSalaryByDept = await collection.aggregate([
+      { $unwind: "$departments" },
+      { $unwind: "$salaries" },
+      {
+        $match: {
+          $expr: {
+            $and: [
+              { $lte: ["$departments.from_date", "$salaries.to_date"] },
+              { $gte: ["$departments.to_date", "$salaries.from_date"] }
+            ]
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$departments.dept_name",
+          avgSalary: { $avg: "$salaries.salary" },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { avgSalary: -1 } }
+    ]).toArray();
+
+    if (avgSalaryByDept.length === 0) {
+      console.log("Nenhum dado encontrado para calcular média salarial por departamento.");
+      return;
+    }
+
+    console.log("Média salarial por departamento:");
+    avgSalaryByDept.forEach(dep => {
+      console.log({
+        departamento: dep._id,
+        media_salarial: dep.avgSalary.toFixed(2),
+        registros: dep.count
+      });
+    });
+  } catch (error) {
+    console.error('Erro ao calcular média salarial por departamento:', error);
+  } finally {
+    if (client) await closeMongoDb(client);
+  }
+}
+
 //2a:
 // Teste com nome:
 //findEmployeesByManagerDepartment("DeForest Hagimont");
-
 // Teste com ID:
 //findEmployeesByManagerDepartment(110386);
 
 //2b:
 // Exemplo de uso:
-findEmployeesByTitle('Senior Engineer');
+//findEmployeesByTitle('Senior Engineer');
+
+//2c:
+// Exemplo de uso:
+//findEmployeesByDepartment('Production');
+
+//2d:
+// Exemplo de uso:
+//listAvgSalaryByDepartment();
