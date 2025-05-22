@@ -64,23 +64,24 @@ async function findEmployeesByManagerDepartment(managerInput) {
 
       console.log(`\nFuncionários do departamento "${dept_name}" sob gerência de ${managerInput} (${mgr_from.toISOString().slice(0,10)} até ${mgr_to.toISOString().slice(0,10)}):`);
       let count = 0;
-      employees.forEach(emp => {
-        const dept = emp.departments.find(d =>
-          d.dept_name === dept_name &&
-          new Date(d.from_date) <= mgr_to &&
-          new Date(d.to_date) >= mgr_from
-        );
-        if (dept) {
-          count++;
-          console.log({
-            emp_no: emp.emp_no,
-            nome: `${emp.first_name} ${emp.last_name}`,
-            dept_name: dept.dept_name,
-            dept_from: dept.from_date,
-            dept_to: dept.to_date
-          });
-        }
-      });
+employees.forEach((emp, index) => {
+  const dept = emp.departments.find(d =>
+    d.dept_name === dept_name &&
+    new Date(d.from_date) <= mgr_to &&
+    new Date(d.to_date) >= mgr_from
+  );
+  if (dept) {
+    count++;
+    console.log(`[${index + 1}]`, {
+      emp_no: emp.emp_no,
+      nome: `${emp.first_name} ${emp.last_name}`,
+      dept_name: dept.dept_name,
+      dept_from: dept.from_date,
+      dept_to: dept.to_date
+    });
+  }
+});
+
       console.log(`Total: ${count} funcionário(s) nesse período.`);
     }
   } catch (error) {
@@ -219,6 +220,24 @@ async function listAvgSalaryByDepartment() {
   }
 }
 
+// Function to measure search duration
+async function measureSearchTime(searchFunction, ...args) {
+  const startTime = performance.now();
+  await searchFunction(...args);
+  const endTime = performance.now();
+  const duration = (endTime - startTime) / 1000; // Convert to seconds
+  console.log(`Search took ${duration.toFixed(3)} seconds`);
+}
+
+// Export the new function along with existing ones
+export { 
+  findEmployeesByManagerDepartment, 
+  findEmployeesByTitle, 
+  findEmployeesByDepartment, 
+  listAvgSalaryByDepartment,
+  measureSearchTime 
+};
+
 //2a:
 // Teste com nome:
 //findEmployeesByManagerDepartment("DeForest Hagimont");
@@ -227,12 +246,18 @@ async function listAvgSalaryByDepartment() {
 
 //2b:
 // Exemplo de uso:
-//findEmployeesByTitle('Senior Engineer');
+// findEmployeesByTitle('Senior Engineer');
 
 //2c:
 // Exemplo de uso:
-//findEmployeesByDepartment('Production');
+// findEmployeesByDepartment('Production');
 
 //2d:
 // Exemplo de uso:
-//listAvgSalaryByDepartment();
+// listAvgSalaryByDepartment();
+
+//await measureSearchTime(findEmployeesByManagerDepartment, "Shem Kieras");
+//await measureSearchTime(findEmployeesByManagerDepartment, 110386);
+//await measureSearchTime(findEmployeesByTitle, "Senior Engineer");
+//await measureSearchTime(findEmployeesByDepartment, 'Production');
+//await measureSearchTime(listAvgSalaryByDepartment);
